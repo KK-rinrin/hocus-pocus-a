@@ -1,0 +1,32 @@
+{
+  "author": "Supporterz, Inc.",
+  "description": "Hocus Pocus | Knowledge Sharing Platform for GEEK-Project",
+  "license": "UNLICENSED",
+  "name": "hocus-pocus",
+  "private": true,
+  "scripts": {
+    "build:auto": "vite-node --watch src/index.ts",
+    "build": "npm run check && tsc && vite build",
+    "start": "node ./target/index.js",
+    "test": "vitest run src",
+    "check": "biome check --write --error-on-warnings ./src",
+    "audit": "npm audit --severity high"
+  },
+  "type": "module",
+  "version": "2.4.0",
+  "dependencies": {
+    "@hono/node-server": "^2.0.10",
+    "hono": "^4.12.30",
+    "jose": "^6.2.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^7.1.12",
+    "vite-node": "^3.2.4",
+    "vitest": "^4.1.10"
+  }
+}
