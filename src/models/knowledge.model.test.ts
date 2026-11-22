@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Knowledge, KnowledgeContentRequiredError } from './knowledge.model.js';
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -11,9 +13,17 @@ describe('Create Knowledge', () => {
     const authorId = 'test-author';
     const knowledge = Knowledge.create(content, authorId);
 
+    expect(knowledge.knowledgeId).toMatch(UUID_PATTERN);
     expect(knowledge.content).toBe(content);
     expect(knowledge.authorId).toBe(authorId);
     expect(knowledge.createdAt).toEqual(knowledge.updatedAt);
+  });
+
+  it('Knowledge ごとに一意な knowledgeId が生成される', () => {
+    const first = Knowledge.create('First content', 'test-author');
+    const second = Knowledge.create('Second content', 'test-author');
+
+    expect(first.knowledgeId).not.toBe(second.knowledgeId);
   });
 
   it('空文字と空白だけの本文を拒否する', () => {

@@ -34,13 +34,13 @@
 Step 1: 作成画面の URL と Feature を追加する
 -------------------------------------------------------------------------------
 
-- [ ] `src/features/CreateKnowledgeFeature.tsx` を作成する
-- [ ] `src/features/Layout.tsx` を利用して作成画面を構成する
-- [ ] ページタイトルを「ナレッジ作成」などに設定する
-- [ ] Markdown 本文の入力欄として `<textarea name="content">` を配置する
-- [ ] `<form>` を `/knowledges/new` へ `POST` で送信するようにする
-- [ ] キャンセル時に一覧へ戻れるリンクを作成する
-- [ ] モバイルファーストの固定幅レイアウトと既存の Tailwind トークンを利用する
+- [x] `src/features/CreateKnowledgeFeature.tsx` を作成する
+- [x] `src/features/Layout.tsx` を利用して作成画面を構成する
+- [x] ページタイトルを「ナレッジ作成」などに設定する
+- [x] Markdown 本文の入力欄として `<textarea name="content">` を配置する
+- [x] `<form>` を `/knowledges/new` へ `POST` で送信するようにする
+- [x] キャンセル時に一覧へ戻れるリンクを作成する
+- [x] モバイルファーストの固定幅レイアウトと既存の Tailwind トークンを利用する
 
 この Step の完遂条件:
 
@@ -51,14 +51,14 @@ Step 1: 作成画面の URL と Feature を追加する
 Step 2: GET と POST のルートを Router に追加する
 -------------------------------------------------------------------------------
 
-- [ ] `src/router.ts` に `router.get('/knowledges/new', ...)` を追加する
-- [ ] 作成画面用の Controller を呼び出す
-- [ ] `router.post('/knowledges/new', ...)` を追加する
-- [ ] `ctx.req.parseBody()` または同等の API で `content` を取得する
-- [ ] `ctx.get('userId')` で作成者 ID を取得する
-- [ ] 保存処理を Controller に委譲する
-- [ ] 保存成功後は `ctx.redirect('/')` を返す
-- [ ] `ctx` を直接 Controller に渡さず、必要な値だけを引数で渡す
+- [x] `src/router.ts` に `router.get('/knowledges/new', ...)` を追加する
+- [x] 作成画面用の Controller を呼び出す
+- [x] `router.post('/knowledges/new', ...)` を追加する
+- [x] `ctx.req.parseBody()` または同等の API で `content` を取得する
+- [x] `ctx.get('userId')` で作成者 ID を取得する
+- [x] 保存処理を Controller に委譲する
+- [x] 保存成功後は `ctx.redirect('/')` を返す
+- [x] `ctx` を直接 Controller に渡さず、必要な値だけを引数で渡す
 
 この Step の完遂条件:
 
@@ -69,12 +69,12 @@ Step 2: GET と POST のルートを Router に追加する
 Step 3: 作成画面用の Controller を追加する
 -------------------------------------------------------------------------------
 
-- [ ] `src/controllers/create-knowledge.controller.tsx` を作成する
-- [ ] GET 用に `CreateKnowledgeFeature` を返す関数を作成する
-- [ ] POST 用に `content` と `authorId` を受け取る関数を作成する
-- [ ] `Knowledge.create(content, authorId)` を呼び出してドメインモデルを作成する
-- [ ] `KnowledgeRepository.upsert(knowledge)` を呼び出して保存する
-- [ ] 作成処理と画面組み立ての責務を分離する
+- [x] `src/controllers/create-knowledge.controller.tsx` を作成する
+- [x] GET 用に `CreateKnowledgeFeature` を返す関数を作成する
+- [x] POST 用に `content` と `authorId` を受け取る関数を作成する
+- [x] `Knowledge.create(content, authorId)` を呼び出してドメインモデルを作成する
+- [x] `KnowledgeRepository.upsert(knowledge)` を呼び出して保存する
+- [x] 作成処理と画面組み立ての責務を分離する
 
 この Step の完遂条件:
 
@@ -141,10 +141,10 @@ storage/<knowledgeId>.json
 Step 6: 作成成功後の遷移を実装する
 -------------------------------------------------------------------------------
 
-- [ ] 保存成功時に一覧画面へリダイレクトする
-- [ ] 一覧画面で作成したナレッジが取得対象になることを確認する
-- [ ] 保存失敗時に例外が握りつぶされないことを確認する
-- [ ] 必要に応じてエラー画面または再入力画面を表示する
+- [x] 保存成功時に一覧画面へリダイレクトする
+- [x] 一覧画面で作成したナレッジが取得対象になることを確認する
+- [x] 保存失敗時に例外が握りつぶされないことを確認する
+- [x] 必要に応じてエラー画面または再入力画面を表示する
 
 この Step の完遂条件:
 
@@ -155,11 +155,11 @@ Step 6: 作成成功後の遷移を実装する
 Step 7: 単体テストを追加する
 -------------------------------------------------------------------------------
 
-- [ ] `src/models/knowledge.model.test.ts` に空本文のテストを追加する
-- [ ] `Knowledge.create()` の作成日時と更新日時が一致することをテストする
-- [ ] `Knowledge.create()` の `knowledgeId` と `authorId` をテストする
-- [ ] 必要に応じて新しい `knowledge.repository.test.ts` を作成する
-- [ ] 保存後に `getAll()` で取得できることをテストする
+- [x] `src/models/knowledge.model.test.ts` に空本文のテストを追加する
+- [x] `Knowledge.create()` の作成日時と更新日時が一致することをテストする
+- [x] `Knowledge.create()` の `knowledgeId` と `authorId` をテストする
+- [x] 必要に応じて新しい `knowledge.repository.test.ts` を作成する
+- [x] 保存後に `getAll()` で取得できることをテストする
 
 ファイルとテストの対応を保つため、モデルを追加する場合は対応する `.model.test.ts` も追加する。
 
