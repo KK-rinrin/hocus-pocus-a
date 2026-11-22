@@ -1,6 +1,11 @@
 import { Layout } from './Layout.js';
 
-export function CreateKnowledgeFeature() {
+interface Props {
+  content?: string;
+  error: string | undefined;
+}
+
+export function CreateKnowledgeFeature({ content = '', error }: Props) {
   return (
     <Layout title="ナレッジ作成">
       <div class="py-s">
@@ -8,6 +13,11 @@ export function CreateKnowledgeFeature() {
 
         {/* /knowledges/new へ POST 送信 */}
         <form action="/knowledges/new" class="flex flex-col gap-s" method="post">
+          {error && (
+            <p class="text-red-600" role="alert">
+              {error}
+            </p>
+          )}
           <div>
             <textarea
               class="w-full p-xs border border-gray-300 rounded-(--border-radius-8) text-(length:--font-size-14)"
@@ -15,7 +25,9 @@ export function CreateKnowledgeFeature() {
               placeholder="Markdown 形式でナレッジを入力..."
               required
               rows={8}
-            />
+            >
+              {content}
+            </textarea>
           </div>
 
           <div class="flex items-center justify-between">
