@@ -18,6 +18,8 @@ export interface Variables {
   userName: string;
 }
 
+const SAVE_FAILED_MESSAGE = '保存に失敗しました。時間をおいて再度お試しください';
+
 export const router = new Hono<{ Variables: Variables }>();
 
 router.get('/', (ctx) => {
@@ -45,11 +47,13 @@ router.post('/knowledges/new', async (ctx) => {
   try {
     await submitCreateKnowledgeController(content, authorId);
   } catch (error) {
-    if (!(error instanceof KnowledgeContentRequiredError)) {
-      throw error;
+    if (error instanceof KnowledgeContentRequiredError) {
+      return ctx.html(createKnowledgeController(content, error.message), 400);
     }
 
-    return ctx.html(createKnowledgeController(content, error.message), 400);
+    // MEMO: 例外を握りつぶさずログに残し、入力内容を保ったまま再入力画面を返す
+    console.error(error);
+    return ctx.html(createKnowledgeController(content, SAVE_FAILED_MESSAGE), 500);
   }
 
   return ctx.redirect('/');

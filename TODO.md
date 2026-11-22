@@ -111,13 +111,13 @@ if (content.trim() === '') {
 Step 5: Repository の upsert を実装する
 -------------------------------------------------------------------------------
 
-- [ ] `src/models/knowledge.repository.ts` の `upsert()` を実装する
-- [ ] `node:fs/promises` のファイル書き込み API を利用する
-- [ ] 保存先を `./storage/**/*.json` と一致させる
-- [ ] ファイル名に `knowledge.knowledgeId` を使用する
-- [ ] ディレクトリが存在しない場合は作成する
-- [ ] `Knowledge` を JSON 文字列へ変換して保存する
-- [ ] 書き込み失敗を呼び出し元へ伝える
+- [x] `src/models/knowledge.repository.ts` の `upsert()` を実装する
+- [x] `node:fs/promises` のファイル書き込み API を利用する
+- [x] 保存先を `./storage/**/*.json` と一致させる
+- [x] ファイル名に `knowledge.knowledgeId` を使用する
+- [x] ディレクトリが存在しない場合は作成する
+- [x] `Knowledge` を JSON 文字列へ変換して保存する
+- [x] 書き込み失敗を呼び出し元へ伝える
 
 既存の `getAll()` は次の実装を利用している:
 
