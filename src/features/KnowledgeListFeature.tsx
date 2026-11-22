@@ -23,9 +23,17 @@ export function KnowledgeListFeature({ userName, knowledges }: Props) {
         こんにちは <span class="text-blue-500 font-bold">{userName}</span> さん
       </p>
       {knowledges.length ? (
-        <ul>
+        <ul class="flex flex-col gap-s py-s">
           {knowledges.map((knowledge) => (
-            <li key={knowledge.knowledgeId}>{knowledge.knowledgeId}</li>
+            <li class="border-b border-gray-200 pb-s" key={knowledge.knowledgeId}>
+              <div class="mb-2xs flex items-center justify-between text-(length:--font-size-12) text-gray-600">
+                <span>{knowledge.authorId}</span>
+                <time dateTime={new Date(knowledge.createdAt * 1000).toISOString()}>
+                  {new Date(knowledge.createdAt * 1000).toLocaleString('ja-JP')}
+                </time>
+              </div>
+              <pre class="whitespace-pre-wrap text-(length:--font-size-14)">{knowledge.content}</pre>
+            </li>
           ))}
         </ul>
       ) : (

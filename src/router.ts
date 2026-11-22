@@ -1,5 +1,8 @@
 import { Hono } from 'hono';
-import { createKnowledgeController } from './controllers/create-knowledge.controller.js';
+import {
+  createKnowledgeController,
+  submitCreateKnowledgeController,
+} from './controllers/create-knowledge.controller.js';
 import { getAllKnowledgesController } from './controllers/get-all-knowledges.controller.js';
 
 export interface Variables {
@@ -28,4 +31,17 @@ router.get('/', (ctx) => {
 
 router.get('/knowledges/new', (ctx) => {
   return ctx.html(createKnowledgeController());
+});
+
+// 新規ナレッジ作成
+router.post('/knowledges/new', async (ctx) => {
+  const body = await ctx.req.parseBody();
+  // 本文を取得
+  const content = typeof body['content'] === 'string' ? body['content'] : '';
+  // ユーザーIDを取得
+  const authorId = ctx.get('userId');
+
+  await submitCreateKnowledgeController(content, authorId);
+
+  return ctx.redirect('/');
 });
