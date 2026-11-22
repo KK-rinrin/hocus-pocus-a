@@ -4,6 +4,7 @@ import {
   submitCreateKnowledgeController,
 } from './controllers/create-knowledge.controller.js';
 import { getAllKnowledgesController } from './controllers/get-all-knowledges.controller.js';
+import { KnowledgeContentRequiredError } from './models/knowledge.model.js';
 
 export interface Variables {
   /**
@@ -41,7 +42,15 @@ router.post('/knowledges/new', async (ctx) => {
   // ユーザーIDを取得
   const authorId = ctx.get('userId');
 
-  await submitCreateKnowledgeController(content, authorId);
+  try {
+    await submitCreateKnowledgeController(content, authorId);
+  } catch (error) {
+    if (!(error instanceof KnowledgeContentRequiredError)) {
+      throw error;
+    }
+
+    return ctx.html(createKnowledgeController(content, error.message), 400);
+  }
 
   return ctx.redirect('/');
 });

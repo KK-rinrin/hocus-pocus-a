@@ -20,8 +20,9 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: 依存関係のインストール
+      
         run: npm ci
-
+      
       - name: ビルドが成功するか？
         run: npm run build
 

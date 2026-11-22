@@ -38,6 +38,13 @@ export interface Knowledge {
   readonly updatedAt: number;
 }
 
+export class KnowledgeContentRequiredError extends Error {
+  constructor() {
+    super('本文を入力してください');
+    this.name = 'KnowledgeContentRequiredError';
+  }
+}
+
 /**
  * ナレッジを新規作成する
  *
@@ -46,6 +53,10 @@ export interface Knowledge {
  * @returns 新規作成されたナレッジ
  */
 function create(content: Knowledge['content'], authorId: Knowledge['authorId']): Knowledge {
+  if (content.trim() === '') {
+    throw new KnowledgeContentRequiredError();
+  }
+
   const now = Math.floor(Date.now() / 1000);
 
   return {
