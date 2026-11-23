@@ -35,7 +35,6 @@ export function KnowledgeListFeature({ userName, knowledges }: Props) {
                 {knowledge.title && (
                   <h2 class="mb-3xs text-(length:--font-size-16) font-bold text-gray-900">{knowledge.title}</h2>
                 )}
-                <pre class="whitespace-pre-wrap text-(length:--font-size-14)">{knowledge.content}</pre>
               </a>
             </li>
           ))}
