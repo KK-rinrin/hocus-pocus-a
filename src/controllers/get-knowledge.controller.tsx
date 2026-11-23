@@ -7,12 +7,12 @@ import { KnowledgeRepository } from '../models/knowledge.repository.js';
  *
  * @returns ナレッジが見つからない場合は `undefined` (HTTP ステータスの判断は Router に委譲する)
  */
-export async function getKnowledgeController(knowledgeId: string, currentUserId?: string) {
+export async function getKnowledgeController(knowledgeId: string, userId?: string | undefined) {
   const knowledge = await KnowledgeRepository.getByKnowledgeId(knowledgeId);
 
   if (knowledge == null) return undefined;
 
-  return <KnowledgeDetailFeature currentUserId={currentUserId} knowledge={knowledge} />;
+  return <KnowledgeDetailFeature knowledge={knowledge} userId={userId} />;
 }
 
 /**

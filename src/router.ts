@@ -3,6 +3,11 @@ import {
   createKnowledgeController,
   submitCreateKnowledgeController,
 } from './controllers/create-knowledge.controller.js';
+import {
+  deleteKnowledgeController,
+  deleteKnowledgeFailedController,
+  deleteKnowledgeForbiddenController,
+} from './controllers/delete-knowledge.controller.js';
 import { getAllKnowledgesController } from './controllers/get-all-knowledges.controller.js';
 import { getKnowledgeController, knowledgeNotFoundController } from './controllers/get-knowledge.controller.js';
 import {
@@ -72,7 +77,7 @@ router.get('/knowledges/:knowledgeId', async (ctx) => {
   const userId = ctx.get('userId');
   const knowledgeDetail = await getKnowledgeController(knowledgeId, userId);
 
-  // MEMO: 詳細は誰でも閲覧できるため、本人確認は行わない
+  // MEMO: 詳細は誰でも閲覧できる (userId は本人向け編集・削除導線の表示判定のみに使用する)
   if (knowledgeDetail == null) return ctx.html(knowledgeNotFoundController(), 404);
 
   return ctx.html(knowledgeDetail);
@@ -136,4 +141,23 @@ router.post('/knowledges/:knowledgeId/edit', async (ctx) => {
   }
 
   return ctx.redirect(`/knowledges/${knowledgeId}`);
+});
+
+// ナレッジ削除
+router.post('/knowledges/:knowledgeId/delete', async (ctx) => {
+  const knowledgeId = ctx.req.param('knowledgeId');
+  const userId = ctx.get('userId');
+
+  try {
+    const result = await deleteKnowledgeController(knowledgeId, userId);
+
+    if (result === 'not_found') return ctx.html(knowledgeNotFoundController(), 404);
+    if (result === 'forbidden') return ctx.html(deleteKnowledgeForbiddenController(), 403);
+  } catch (error) {
+    // MEMO: 例外を握りつぶさずログに残し、再試行できるエラー画面を返す
+    console.error(error);
+    return ctx.html(deleteKnowledgeFailedController(knowledgeId), 500);
+  }
+
+  return ctx.redirect('/');
 });
