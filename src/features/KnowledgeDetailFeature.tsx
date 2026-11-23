@@ -57,7 +57,7 @@ export function KnowledgeDetailFeature({ knowledge, userId }: Props) {
                 class="shrink-0 cursor-pointer rounded-(--border-radius-8) bg-red-500 px-s py-2xs text-(length:--font-size-14) font-bold text-white hover:opacity-80"
                 type="submit"
               >
-                削除する
+                削除
               </button>
             </form>
           )}
