@@ -93,4 +93,11 @@ describe('Update Knowledge', () => {
     // toBeGreaterThan: 更新日時が作成時より後の時刻になっているか検証する
     expect(updated.updatedAt).toBeGreaterThan(original.updatedAt);
   });
+
+  it('空文字と空白だけの本文を拒否する', () => {
+    const original = Knowledge.create('Original title', 'Original content', 'test-author');
+
+    expect(() => Knowledge.update(original, '')).toThrow(KnowledgeContentRequiredError);
+    expect(() => Knowledge.update(original, ' \n\t ')).toThrow('本文を入力してください');
+  });
 });

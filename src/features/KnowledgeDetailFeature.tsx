@@ -4,15 +4,26 @@ import { Timestamp } from './Timestamp.js';
 
 interface Props {
   knowledge: Knowledge;
+  currentUserId?: string | undefined;
 }
 
-export function KnowledgeDetailFeature({ knowledge }: Props) {
+export function KnowledgeDetailFeature({ knowledge, currentUserId }: Props) {
   const heading = knowledge.title || 'ナレッジ詳細';
 
   return (
     <Layout title={heading}>
       <div class="py-s">
-        <h1 class="text-(length:--font-size-20) font-bold text-gray-900 mb-s">{heading}</h1>
+        <div class="flex items-center justify-between mb-s">
+          <h1 class="text-(length:--font-size-20) font-bold text-gray-900">{heading}</h1>
+          {knowledge.authorId === currentUserId && (
+            <a
+              class="inline-flex items-center gap-3xs px-s py-2xs rounded-(--border-radius-8) bg-blue-500 text-(length:--font-size-14) font-bold text-white hover:opacity-80"
+              href={`/knowledges/${knowledge.knowledgeId}/edit`}
+            >
+              編集
+            </a>
+          )}
+        </div>
 
         <dl class="mb-s grid grid-cols-[auto_1fr] gap-x-s gap-y-3xs text-(length:--font-size-12) text-gray-600">
           <dt>作成者</dt>

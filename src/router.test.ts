@@ -1,13 +1,32 @@
+import { Hono } from 'hono';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Knowledge } from './models/knowledge.model.js';
 import { KnowledgeRepository } from './models/knowledge.repository.js';
-import { router } from './router.js';
+import { router, type Variables } from './router.js';
 
 function postCreateKnowledge(title: string, content: string) {
   return router.request('/knowledges/new', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ title, content }),
+  });
+}
+
+function requestWithUser(path: string, userId: string, init?: RequestInit) {
+  const testApp = new Hono<{ Variables: Variables }>();
+  testApp.use('*', (ctx, next) => {
+    ctx.set('userId', userId);
+    return next();
+  });
+  testApp.route('/', router);
+  return testApp.request(path, init);
+}
+
+function postEditKnowledge(path: string, content: string, userId: string) {
+  return requestWithUser(path, userId, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ content }),
   });
 }
 
@@ -89,7 +108,7 @@ describe('Create knowledge transition', () => {
 });
 
 describe('Knowledge list', () => {
-  it('一覧画面にナレッジのタイトルと本文を表示する', async () => {
+  it('一覧画面にナレッジのタイトルを表示する', async () => {
     const knowledge = Knowledge.create('一覧のタイトル', '一覧の本文', 'list-author');
     vi.spyOn(KnowledgeRepository, 'getAll').mockResolvedValue([knowledge]);
 
@@ -98,7 +117,6 @@ describe('Knowledge list', () => {
 
     expect(response.status).toBe(200);
     expect(html).toContain('一覧のタイトル');
-    expect(html).toContain('一覧の本文');
   });
 });
 
@@ -142,5 +160,143 @@ describe('Knowledge detail', () => {
     expect(response.status).toBe(404);
     expect(html).toContain('ナレッジが見つかりません');
     expect(html).toContain('href="/"');
+  });
+
+  it('投稿者本人が詳細画面を開いた場合のみ「編集」リンクを表示する', async () => {
+    const knowledge = Knowledge.create('詳細タイトル', '本文', 'author-alice');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+
+    // 本人の場合
+    const responseForAuthor = await requestWithUser(`/knowledges/${knowledge.knowledgeId}`, 'author-alice');
+    const htmlForAuthor = await responseForAuthor.text();
+    expect(htmlForAuthor).toContain('編集');
+    expect(htmlForAuthor).toContain(`/knowledges/${knowledge.knowledgeId}/edit`);
+
+    // 他人の場合
+    const responseForOther = await requestWithUser(`/knowledges/${knowledge.knowledgeId}`, 'author-bob');
+    const htmlOther = await responseForOther.text();
+    expect(htmlOther).not.toContain(`/knowledges/${knowledge.knowledgeId}/edit`);
+  });
+});
+
+describe('Knowledge edit view', () => {
+  it('投稿者本人がアクセスした場合、編集画面に既存の本文を表示する', async () => {
+    const knowledge = Knowledge.create('編集テストタイトル', '既存のナレッジ本文', 'author-alice');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+
+    const response = await requestWithUser(`/knowledges/${knowledge.knowledgeId}/edit`, 'author-alice');
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).toContain('編集テストタイトル');
+    expect(html).toContain('既存のナレッジ本文');
+    expect(html).toContain(`action="/knowledges/${knowledge.knowledgeId}/edit"`);
+  });
+
+  it('他人または未ログインユーザーがアクセスした場合、403 を返す', async () => {
+    const knowledge = Knowledge.create('編集テストタイトル', '既存のナレッジ本文', 'author-alice');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+
+    const response = await requestWithUser(`/knowledges/${knowledge.knowledgeId}/edit`, 'author-bob');
+
+    expect(response.status).toBe(403);
+    expect(await response.text()).toContain('権限がありません');
+  });
+
+  it('存在しないナレッジの編集画面を開いた場合、404 を返す', async () => {
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(undefined);
+
+    const response = await requestWithUser('/knowledges/does-not-exist/edit', 'author-alice');
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toContain('ナレッジが見つかりません');
+  });
+});
+
+describe('Knowledge edit transition', () => {
+  it('投稿者本人が更新に成功したら、詳細画面へリダイレクトして保存される', async () => {
+    const knowledge = Knowledge.create('元のタイトル', '元の本文', 'author-alice');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+    const upsert = vi.spyOn(KnowledgeRepository, 'upsert').mockResolvedValue();
+
+    const newContent = '更新後の新しい本文';
+    const response = await postEditKnowledge(`/knowledges/${knowledge.knowledgeId}/edit`, newContent, 'author-alice');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('Location')).toBe(`/knowledges/${knowledge.knowledgeId}`);
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        knowledgeId: knowledge.knowledgeId,
+        title: knowledge.title,
+        content: newContent,
+        authorId: 'author-alice',
+        createdAt: knowledge.createdAt,
+      }),
+    );
+  });
+
+  it('他人による更新リクエストは 403 で拒否され、保存されない', async () => {
+    const knowledge = Knowledge.create('元のタイトル', '元の本文', 'author-alice');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+    const upsert = vi.spyOn(KnowledgeRepository, 'upsert').mockResolvedValue();
+
+    const response = await postEditKnowledge(
+      `/knowledges/${knowledge.knowledgeId}/edit`,
+      '不正な更新本文',
+      'author-bob',
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.text()).toContain('権限がありません');
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it('存在しないナレッジの更新リクエストは 404 を返す', async () => {
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(undefined);
+    const upsert = vi.spyOn(KnowledgeRepository, 'upsert').mockResolvedValue();
+
+    const response = await postEditKnowledge('/knowledges/does-not-exist/edit', '存在しない更新本文', 'author-alice');
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toContain('ナレッジが見つかりません');
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it('空本文の更新を拒否して、入力値とエラーを編集画面に返す', async () => {
+    const knowledge = Knowledge.create('元のタイトル', '元の本文', 'author-alice');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+    const upsert = vi.spyOn(KnowledgeRepository, 'upsert').mockResolvedValue();
+
+    const invalidContent = '  \t  ';
+    const response = await postEditKnowledge(
+      `/knowledges/${knowledge.knowledgeId}/edit`,
+      invalidContent,
+      'author-alice',
+    );
+
+    const html = await response.text();
+
+    expect(response.status).toBe(400);
+    expect(html).toContain('本文を入力してください');
+    expect(html).toContain(`>${invalidContent}</textarea>`);
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it('保存に失敗したら、例外をログに残し、入力値とエラーを編集画面に返す', async () => {
+    const knowledge = Knowledge.create('元のタイトル', '元の本文', 'author-alice');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+    const failure = new Error('disk full');
+    vi.spyOn(KnowledgeRepository, 'upsert').mockRejectedValue(failure);
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const content = '保存できない更新本文';
+    const response = await postEditKnowledge(`/knowledges/${knowledge.knowledgeId}/edit`, content, 'author-alice');
+
+    const html = await response.text();
+
+    expect(response.status).toBe(500);
+    expect(html).toContain('保存に失敗しました');
+    expect(html).toContain(`>${content}</textarea>`);
+    expect(logError).toHaveBeenCalledWith(failure);
   });
 });

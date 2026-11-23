@@ -5,6 +5,10 @@ import {
 } from './controllers/create-knowledge.controller.js';
 import { getAllKnowledgesController } from './controllers/get-all-knowledges.controller.js';
 import { getKnowledgeController, knowledgeNotFoundController } from './controllers/get-knowledge.controller.js';
+import {
+  getKnowledgeEditController,
+  submitKnowledgeEditController,
+} from './controllers/get-knowledge-edit.controller.js';
 import { KnowledgeValidationError } from './models/knowledge.model.js';
 
 export interface Variables {
@@ -65,10 +69,71 @@ router.post('/knowledges/new', async (ctx) => {
 // MEMO: `/knowledges/new` より後に登録し、`new` が knowledgeId として扱われないようにする
 router.get('/knowledges/:knowledgeId', async (ctx) => {
   const knowledgeId = ctx.req.param('knowledgeId');
-  const knowledgeDetail = await getKnowledgeController(knowledgeId);
+  const userId = ctx.get('userId');
+  const knowledgeDetail = await getKnowledgeController(knowledgeId, userId);
 
   // MEMO: 詳細は誰でも閲覧できるため、本人確認は行わない
   if (knowledgeDetail == null) return ctx.html(knowledgeNotFoundController(), 404);
 
   return ctx.html(knowledgeDetail);
+});
+
+// ナレッジ編集画面の表示
+router.get('/knowledges/:knowledgeId/edit', async (ctx) => {
+  const knowledgeId = ctx.req.param('knowledgeId');
+  const userId = ctx.get('userId');
+  const result = await getKnowledgeEditController(knowledgeId, userId);
+
+  if (result.status === 'not_found') {
+    return ctx.html(knowledgeNotFoundController(), 404);
+  }
+
+  if (result.status === 'forbidden') {
+    return ctx.text('このナレッジを編集する権限がありません', 403);
+  }
+
+  return ctx.html(result.component);
+});
+
+// ナレッジの更新
+router.post('/knowledges/:knowledgeId/edit', async (ctx) => {
+  const knowledgeId = ctx.req.param('knowledgeId');
+  const userId = ctx.get('userId');
+  const body = await ctx.req.parseBody();
+  const content = typeof body['content'] === 'string' ? body['content'] : '';
+
+  try {
+    const result = await submitKnowledgeEditController(knowledgeId, content, userId);
+
+    if (result.status === 'not_found') {
+      return ctx.html(knowledgeNotFoundController(), 404);
+    }
+
+    if (result.status === 'forbidden') {
+      return ctx.text('このナレッジを編集する権限がありません', 403);
+    }
+  } catch (error) {
+    if (error instanceof KnowledgeValidationError) {
+      const editView = await getKnowledgeEditController(knowledgeId, userId, {
+        content,
+        error: error.message,
+      });
+      if (editView.status === 'ok') {
+        return ctx.html(editView.component, 400);
+      }
+    }
+
+    console.error(error);
+    const editView = await getKnowledgeEditController(knowledgeId, userId, {
+      content,
+      error: SAVE_FAILED_MESSAGE,
+    });
+    if (editView.status === 'ok') {
+      return ctx.html(editView.component, 500);
+    }
+
+    return ctx.text('更新に失敗しました', 500);
+  }
+
+  return ctx.redirect(`/knowledges/${knowledgeId}`);
 });
