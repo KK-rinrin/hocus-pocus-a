@@ -6,7 +6,8 @@
 
 主要機能要件の「ナレッジ作成 (Create)」を実装する。
 
-- Markdown 形式の本文を入力できる
+- タイトルを入力できる
+- Markdown 形式のナレッジを本文として入力できる
 - ログイン中のユーザーを作成者として保存できる
 - 作成後にナレッジ一覧へ遷移できる
 - 保存されたナレッジはファイルシステムから取得できる
@@ -37,6 +38,7 @@ Step 1: 作成画面の URL と Feature を追加する
 - [x] `src/features/CreateKnowledgeFeature.tsx` を作成する
 - [x] `src/features/Layout.tsx` を利用して作成画面を構成する
 - [x] ページタイトルを「ナレッジ作成」などに設定する
+- [x] タイトルの入力欄として `<input name="title">` を配置する
 - [x] Markdown 本文の入力欄として `<textarea name="content">` を配置する
 - [x] `<form>` を `/knowledges/new` へ `POST` で送信するようにする
 - [x] キャンセル時に一覧へ戻れるリンクを作成する
@@ -46,7 +48,7 @@ Step 1: 作成画面の URL と Feature を追加する
 
 - `/knowledges/new` にアクセスすると作成画面が表示される
 - 作成画面から一覧へ戻れる
-- フォームに本文を入力できる
+- フォームにタイトルと本文を入力できる
 
 Step 2: GET と POST のルートを Router に追加する
 -------------------------------------------------------------------------------
@@ -54,7 +56,7 @@ Step 2: GET と POST のルートを Router に追加する
 - [x] `src/router.ts` に `router.get('/knowledges/new', ...)` を追加する
 - [x] 作成画面用の Controller を呼び出す
 - [x] `router.post('/knowledges/new', ...)` を追加する
-- [x] `ctx.req.parseBody()` または同等の API で `content` を取得する
+- [x] `ctx.req.parseBody()` または同等の API で `title` と `content` を取得する
 - [x] `ctx.get('userId')` で作成者 ID を取得する
 - [x] 保存処理を Controller に委譲する
 - [x] 保存成功後は `ctx.redirect('/')` を返す
@@ -64,15 +66,15 @@ Step 2: GET と POST のルートを Router に追加する
 
 - 作成画面の GET リクエストを処理できる
 - フォーム送信の POST リクエストを受け取れる
-- POST リクエストの本文と作成者 ID を Controller に渡せる
+- POST リクエストのタイトル・本文・作成者 ID を Controller に渡せる
 
 Step 3: 作成画面用の Controller を追加する
 -------------------------------------------------------------------------------
 
 - [x] `src/controllers/create-knowledge.controller.tsx` を作成する
 - [x] GET 用に `CreateKnowledgeFeature` を返す関数を作成する
-- [x] POST 用に `content` と `authorId` を受け取る関数を作成する
-- [x] `Knowledge.create(content, authorId)` を呼び出してドメインモデルを作成する
+- [x] POST 用に `title`・`content`・`authorId` を受け取る関数を作成する
+- [x] `Knowledge.create(title, content, authorId)` を呼び出してドメインモデルを作成する
 - [x] `KnowledgeRepository.upsert(knowledge)` を呼び出して保存する
 - [x] 作成処理と画面組み立ての責務を分離する
 
@@ -82,12 +84,13 @@ Step 3: 作成画面用の Controller を追加する
 - Controller が Model と Repository を適切に利用できる
 - Router は HTTP の組み立てに集中できる
 
-Step 4: 空本文などの入力チェックを実装する
+Step 4: 空タイトル・空本文などの入力チェックを実装する
 -------------------------------------------------------------------------------
 
+- [x] 空文字または空白だけのタイトルを拒否する
 - [x] 空文字または空白だけの本文を拒否する
 - [x] バリデーションエラー時に作成画面へ戻す
-- [x] 入力した本文とエラーメッセージを画面へ返せるようにする
+- [x] 入力したタイトル・本文とエラーメッセージを画面へ返せるようにする
 - [x] 正常な文字列は空白をそのまま保存する
 
 推奨する設計:
@@ -188,12 +191,13 @@ Step 8: 動作確認とビルドを実行する
 次の項目をすべて満たしたら完了とする。
 
 - [ ] 一覧画面の「新規作成」から作成画面へ遷移できる
+- [ ] タイトルを入力できる
 - [ ] Markdown テキストを本文として入力できる
 - [ ] 作成者 ID がログインユーザーまたはデバッグユーザーになる
 - [ ] ナレッジが一意な ID を持つ
 - [ ] ナレッジが標準ファイルシステムへ保存される
 - [ ] 作成成功後に一覧へ遷移する
-- [ ] 空本文は保存されない
+- [ ] 空タイトル・空本文は保存されない
 - [ ] `npm test` と `npm run build` が成功する
 
 推奨する実装順

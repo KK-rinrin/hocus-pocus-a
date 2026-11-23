@@ -21,6 +21,11 @@ export interface Knowledge {
   readonly authorId: string;
 
   /**
+   * ナレッジのタイトル
+   */
+  readonly title: string;
+
+  /**
    * ナレッジの本文 (Markdown)
    *
    * @todo (学生向け) 空白の場合は不正な Knowledge とみなす
@@ -38,7 +43,16 @@ export interface Knowledge {
   readonly updatedAt: number;
 }
 
-export class KnowledgeContentRequiredError extends Error {
+export class KnowledgeValidationError extends Error {}
+
+export class KnowledgeTitleRequiredError extends KnowledgeValidationError {
+  constructor() {
+    super('タイトルを入力してください');
+    this.name = 'KnowledgeTitleRequiredError';
+  }
+}
+
+export class KnowledgeContentRequiredError extends KnowledgeValidationError {
   constructor() {
     super('本文を入力してください');
     this.name = 'KnowledgeContentRequiredError';
@@ -48,11 +62,16 @@ export class KnowledgeContentRequiredError extends Error {
 /**
  * ナレッジを新規作成する
  *
+ * @param title ナレッジのタイトル
  * @param content ナレッジの本文
  * @param authorId ナレッジの作成者の ID
  * @returns 新規作成されたナレッジ
  */
-function create(content: Knowledge['content'], authorId: Knowledge['authorId']): Knowledge {
+function create(title: Knowledge['title'], content: Knowledge['content'], authorId: Knowledge['authorId']): Knowledge {
+  if (title.trim() === '') {
+    throw new KnowledgeTitleRequiredError();
+  }
+
   if (content.trim() === '') {
     throw new KnowledgeContentRequiredError();
   }
@@ -62,6 +81,7 @@ function create(content: Knowledge['content'], authorId: Knowledge['authorId']):
   return {
     __tag: 'Knowledge',
     knowledgeId: randomUUID(),
+    title,
     content,
     authorId,
     createdAt: now,
