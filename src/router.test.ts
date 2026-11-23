@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Hono } from 'hono';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { deleteKnowledgeController } from './controllers/delete-knowledge.controller.js';
@@ -276,5 +279,48 @@ describe('Delete knowledge', () => {
     vi.spyOn(KnowledgeRepository, 'deleteByKnowledgeId').mockRejectedValue(failure);
 
     await expect(deleteKnowledgeController(knowledge.knowledgeId, 'author-1')).rejects.toThrow(failure);
+  });
+
+  it('テスト用保存先で本人削除を実行すると、一覧と詳細から対象だけが消え、他ナレッジは残る', async () => {
+    const originalCwd = process.cwd();
+    const tempDir = await mkdtemp(join(tmpdir(), 'hocus-pocus-delete-test-'));
+
+    try {
+      process.chdir(tempDir);
+
+      const target = Knowledge.create('削除するナレッジ', '消える本文', 'author-1');
+      const other = Knowledge.create('残るナレッジ', '残る本文', 'author-2');
+      await KnowledgeRepository.upsert(target);
+      await KnowledgeRepository.upsert(other);
+
+      // 別ユーザーでは削除できず、対象が残る
+      const forbiddenResponse = await requestAsUser(`/knowledges/${target.knowledgeId}/delete`, 'author-2', {
+        method: 'POST',
+      });
+      expect(forbiddenResponse.status).toBe(403);
+      expect((await router.request(`/knowledges/${target.knowledgeId}`)).status).toBe(200);
+
+      // 投稿者本人が削除すると一覧へリダイレクトされる
+      const deleteResponse = await requestAsUser(`/knowledges/${target.knowledgeId}/delete`, 'author-1', {
+        method: 'POST',
+      });
+      expect(deleteResponse.status).toBe(302);
+      expect(deleteResponse.headers.get('Location')).toBe('/');
+
+      // 削除後の一覧・詳細から対象が消え、他のナレッジは残る
+      const listHtml = await (await requestAsUser('/', 'author-1')).text();
+      expect(listHtml).not.toContain('削除するナレッジ');
+      expect(listHtml).toContain('残るナレッジ');
+
+      const deletedDetailResponse = await requestAsUser(`/knowledges/${target.knowledgeId}`, 'author-1');
+      expect(deletedDetailResponse.status).toBe(404);
+
+      const remainingDetailResponse = await requestAsUser(`/knowledges/${other.knowledgeId}`, 'author-1');
+      expect(remainingDetailResponse.status).toBe(200);
+      expect(await remainingDetailResponse.text()).toContain('残るナレッジ');
+    } finally {
+      process.chdir(originalCwd);
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 });

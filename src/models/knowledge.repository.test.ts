@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -86,7 +86,21 @@ describe('KnowledgeRepository', () => {
     await KnowledgeRepository.deleteByKnowledgeId(target.knowledgeId);
 
     expect(await KnowledgeRepository.getByKnowledgeId(target.knowledgeId)).toBeUndefined();
+    expect(await KnowledgeRepository.getByKnowledgeId(other.knowledgeId)).toEqual(other);
     expect(await KnowledgeRepository.getAll()).toEqual([other]);
+  });
+
+  it('deleteByKnowledgeId はファイル削除に失敗した場合に例外を呼び出し元へ伝える', async () => {
+    const target = Knowledge.create('削除失敗テスト', '本文', 'test-author');
+    await KnowledgeRepository.upsert(target);
+
+    // MEMO: storage ディレクトリから書き込み権限を外し、読み込みは成功しつつ unlink だけ失敗させる
+    await chmod('./storage', 0o555);
+    try {
+      await expect(KnowledgeRepository.deleteByKnowledgeId(target.knowledgeId)).rejects.toThrow();
+    } finally {
+      await chmod('./storage', 0o755);
+    }
   });
 
   it('deleteByKnowledgeId は存在しない knowledgeId でもエラーにならず完了する', async () => {
