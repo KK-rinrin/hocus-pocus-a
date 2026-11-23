@@ -1,58 +1,96 @@
+// Vitest からテスト用の関数を読み込む
+// - describe: 関連するテストをグループ化する
+// - it: 1つのテストケースを定義する
+// - expect: 実際の値と期待する値を比較して検証する
+// - afterEach: 各テストの実行後に毎回行う後処理を登録する
+// - vi: 時刻の固定など、テスト用の便利機能（モック・タイマー）を提供する
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Knowledge, KnowledgeContentRequiredError } from './knowledge.model.js';
+// テスト対象（モデル本体とエラークラス）を読み込む
+// ※ TypeScript の NodeNext 設定では、元のファイルが .ts でも import 先はコンパイル後の .js で記述する
+import { Knowledge, KnowledgeContentRequiredError, KnowledgeTitleRequiredError } from './knowledge.model.js';
 
+// UUID (例: 550e8400-e29b-41d4-a716-446655440000) の形式に一致するか調べる正規表現
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+// テストの中で仮想タイマー (vi.useFakeTimers) を使ったあと、
+// 次のテストに影響しないよう毎回通常のタイマーへ戻す
 afterEach(() => {
   vi.useRealTimers();
 });
 
+// Knowledge.create() の動作をまとめるテストグループ
 describe('Create Knowledge', () => {
   it('Knowledge が作成できる', () => {
+    const title = 'Test Title';
     const content = 'This is a test content.';
     const authorId = 'test-author';
-    const knowledge = Knowledge.create(content, authorId);
+    // 引数は (タイトル, 本文, 作成者ID) の順で渡す
+    const knowledge = Knowledge.create(title, content, authorId);
 
+    // toMatch: 文字列が正規表現に一致するか検証する
     expect(knowledge.knowledgeId).toMatch(UUID_PATTERN);
+    // toBe: 値（文字列・数値など）が厳密に一致 (===) するか検証する
+    expect(knowledge.title).toBe(title);
     expect(knowledge.content).toBe(content);
     expect(knowledge.authorId).toBe(authorId);
+    // 新規作成直後は作成日時と更新日時が同じになることを確認する
     expect(knowledge.createdAt).toEqual(knowledge.updatedAt);
   });
 
   it('Knowledge ごとに一意な knowledgeId が生成される', () => {
-    const first = Knowledge.create('First content', 'test-author');
-    const second = Knowledge.create('Second content', 'test-author');
+    const first = Knowledge.create('First title', 'First content', 'test-author');
+    const second = Knowledge.create('Second title', 'Second content', 'test-author');
 
+    // .not を挟むと「一致しないこと」を検証できる
     expect(first.knowledgeId).not.toBe(second.knowledgeId);
   });
 
-  it('空文字と空白だけの本文を拒否する', () => {
-    expect(() => Knowledge.create('', 'test-author')).toThrow(KnowledgeContentRequiredError);
-    expect(() => Knowledge.create(' \n\t ', 'test-author')).toThrow('本文を入力してください');
+  it('空文字と空白だけのタイトルを拒否する', () => {
+    // 例外 (throw) を検証するときは、テスト関数が先に落ちてしまわないように
+    // アロー関数 () => ... で包んで expect() に渡す
+    expect(() => Knowledge.create('', 'Valid content', 'test-author')).toThrow(KnowledgeTitleRequiredError);
+    // toThrow に文字列を渡すと、エラーメッセージにその文字が含まれるか検証できる
+    expect(() => Knowledge.create(' \n\t ', 'Valid content', 'test-author')).toThrow('タイトルを入力してください');
   });
 
-  it('有効な本文の空白を保持する', () => {
-    const content = '  This is a test content.  ';
+  it('空文字と空白だけの本文を拒否する', () => {
+    expect(() => Knowledge.create('Valid title', '', 'test-author')).toThrow(KnowledgeContentRequiredError);
+    expect(() => Knowledge.create('Valid title', ' \n\t ', 'test-author')).toThrow('本文を入力してください');
+  });
 
-    expect(Knowledge.create(content, 'test-author').content).toBe(content);
+  it('有効なタイトルと本文の空白を保持する', () => {
+    const title = '  Test Title  ';
+    const content = '  This is a test content.  ';
+    const knowledge = Knowledge.create(title, content, 'test-author');
+
+    // trim() で勝手に前後の空白が削られず、元の文字列のまま保存されることを確認する
+    expect(knowledge.title).toBe(title);
+    expect(knowledge.content).toBe(content);
   });
 });
 
+// Knowledge.update() の動作をまとめるテストグループ
 describe('Update Knowledge', () => {
   it('Knowledge が更新できる', () => {
+    // テスト内で時間を自在に進められるように、仮想タイマーを有効にする
     vi.useFakeTimers();
 
-    const original = Knowledge.create('This is an original content', 'test-author');
+    const original = Knowledge.create('Original title', 'This is an original content', 'test-author');
     const content = 'This is an updated content.';
 
+    // 仮想時計を 10 秒 (10000 ミリ秒) 進める
     vi.advanceTimersByTime(10000);
 
+    // 元の Knowledge は直接書き換えず、更新後の新しい Knowledge を受け取る
     const updated = Knowledge.update(original, content);
 
+    // ID・タイトル・作成者・作成日時は変わらず、本文と更新日時だけが変わることを確認する
     expect(updated.knowledgeId).toBe(original.knowledgeId);
+    expect(updated.title).toBe(original.title);
     expect(updated.content).toBe(content);
     expect(updated.authorId).toBe(original.authorId);
     expect(updated.createdAt).toEqual(original.createdAt);
+    // toBeGreaterThan: 更新日時が作成時より後の時刻になっているか検証する
     expect(updated.updatedAt).toBeGreaterThan(original.updatedAt);
   });
 });

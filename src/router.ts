@@ -4,7 +4,8 @@ import {
   submitCreateKnowledgeController,
 } from './controllers/create-knowledge.controller.js';
 import { getAllKnowledgesController } from './controllers/get-all-knowledges.controller.js';
-import { KnowledgeContentRequiredError } from './models/knowledge.model.js';
+import { getKnowledgeController, knowledgeNotFoundController } from './controllers/get-knowledge.controller.js';
+import { KnowledgeValidationError } from './models/knowledge.model.js';
 
 export interface Variables {
   /**
@@ -39,22 +40,35 @@ router.get('/knowledges/new', (ctx) => {
 // 新規ナレッジ作成
 router.post('/knowledges/new', async (ctx) => {
   const body = await ctx.req.parseBody();
-  // 本文を取得
+  // タイトルと本文を取得
+  const title = typeof body['title'] === 'string' ? body['title'] : '';
   const content = typeof body['content'] === 'string' ? body['content'] : '';
   // ユーザーIDを取得
   const authorId = ctx.get('userId');
 
   try {
-    await submitCreateKnowledgeController(content, authorId);
+    await submitCreateKnowledgeController(title, content, authorId);
   } catch (error) {
-    if (error instanceof KnowledgeContentRequiredError) {
-      return ctx.html(createKnowledgeController(content, error.message), 400);
+    if (error instanceof KnowledgeValidationError) {
+      return ctx.html(createKnowledgeController({ content, error: error.message, title }), 400);
     }
 
     // MEMO: 例外を握りつぶさずログに残し、入力内容を保ったまま再入力画面を返す
     console.error(error);
-    return ctx.html(createKnowledgeController(content, SAVE_FAILED_MESSAGE), 500);
+    return ctx.html(createKnowledgeController({ content, error: SAVE_FAILED_MESSAGE, title }), 500);
   }
 
   return ctx.redirect('/');
+});
+
+// ナレッジ詳細
+// MEMO: `/knowledges/new` より後に登録し、`new` が knowledgeId として扱われないようにする
+router.get('/knowledges/:knowledgeId', async (ctx) => {
+  const knowledgeId = ctx.req.param('knowledgeId');
+  const knowledgeDetail = await getKnowledgeController(knowledgeId);
+
+  // MEMO: 詳細は誰でも閲覧できるため、本人確認は行わない
+  if (knowledgeDetail == null) return ctx.html(knowledgeNotFoundController(), 404);
+
+  return ctx.html(knowledgeDetail);
 });

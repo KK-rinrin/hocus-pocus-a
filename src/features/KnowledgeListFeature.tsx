@@ -1,5 +1,6 @@
 import type { Knowledge } from '../models/knowledge.model.js';
 import { Layout } from './Layout.js';
+import { Timestamp } from './Timestamp.js';
 
 interface Props {
   userName: string;
@@ -26,13 +27,16 @@ export function KnowledgeListFeature({ userName, knowledges }: Props) {
         <ul class="flex flex-col gap-s py-s">
           {knowledges.map((knowledge) => (
             <li class="border-b border-gray-200 pb-s" key={knowledge.knowledgeId}>
-              <div class="mb-2xs flex items-center justify-between text-(length:--font-size-12) text-gray-600">
-                <span>{knowledge.authorId}</span>
-                <time dateTime={new Date(knowledge.createdAt * 1000).toISOString()}>
-                  {new Date(knowledge.createdAt * 1000).toLocaleString('ja-JP')}
-                </time>
-              </div>
-              <pre class="whitespace-pre-wrap text-(length:--font-size-14)">{knowledge.content}</pre>
+              <a class="block hover:opacity-70" href={`/knowledges/${knowledge.knowledgeId}`}>
+                <div class="mb-2xs flex items-center justify-between text-(length:--font-size-12) text-gray-600">
+                  <span>{knowledge.authorId}</span>
+                  <Timestamp value={knowledge.createdAt} />
+                </div>
+                {knowledge.title && (
+                  <h2 class="mb-3xs text-(length:--font-size-16) font-bold text-gray-900">{knowledge.title}</h2>
+                )}
+                <pre class="whitespace-pre-wrap text-(length:--font-size-14)">{knowledge.content}</pre>
+              </a>
             </li>
           ))}
         </ul>

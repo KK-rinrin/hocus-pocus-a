@@ -1,11 +1,12 @@
 import { Layout } from './Layout.js';
 
 interface Props {
+  title?: string;
   content?: string;
   error: string | undefined;
 }
 
-export function CreateKnowledgeFeature({ content = '', error }: Props) {
+export function CreateKnowledgeFeature({ title = '', content = '', error }: Props) {
   return (
     <Layout title="ナレッジ作成">
       <div class="py-s">
@@ -14,15 +15,34 @@ export function CreateKnowledgeFeature({ content = '', error }: Props) {
         {/* /knowledges/new へ POST 送信 */}
         <form action="/knowledges/new" class="flex flex-col gap-s" method="post">
           {error && (
-            <p class="text-red-600" role="alert">
+            <p class="text-red-500 text-(length:--font-size-14)" role="alert">
               {error}
             </p>
           )}
-          <div>
+          <div class="flex flex-col gap-3xs">
+            <label class="text-(length:--font-size-14) font-bold text-gray-700" for="title">
+              タイトル
+            </label>
+            <input
+              class="w-full p-xs border border-gray-300 rounded-(--border-radius-8) text-(length:--font-size-14)"
+              id="title"
+              name="title"
+              placeholder="タイトルを入力..."
+              required
+              type="text"
+              value={title}
+            />
+          </div>
+
+          <div class="flex flex-col gap-3xs">
+            <label class="text-(length:--font-size-14) font-bold text-gray-700" for="content">
+              本文
+            </label>
             <textarea
               class="w-full p-xs border border-gray-300 rounded-(--border-radius-8) text-(length:--font-size-14)"
+              id="content"
               name="content"
-              placeholder="Markdown 形式でナレッジを入力..."
+              placeholder="Markdown 形式で本文を入力..."
               required
               rows={8}
             >
