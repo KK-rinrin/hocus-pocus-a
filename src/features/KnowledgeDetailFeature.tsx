@@ -4,10 +4,14 @@ import { Timestamp } from './Timestamp.js';
 
 interface Props {
   knowledge: Knowledge;
+  userId: string;
 }
 
-export function KnowledgeDetailFeature({ knowledge }: Props) {
+export function KnowledgeDetailFeature({ knowledge, userId }: Props) {
   const heading = knowledge.title || 'ナレッジ詳細';
+  const isAuthor = Boolean(userId) && knowledge.authorId === userId;
+  const deleteConfirmMessage = `「${heading}」を削除しますか？\n削除したナレッジは元に戻せません。`;
+  const deleteOnSubmit = `return confirm(${JSON.stringify(deleteConfirmMessage)})`;
 
   return (
     <Layout title={heading}>
@@ -32,9 +36,22 @@ export function KnowledgeDetailFeature({ knowledge }: Props) {
           {knowledge.content}
         </pre>
 
-        <a class="mt-s inline-block text-(length:--font-size-14) text-gray-500 hover:underline" href="/">
-          一覧へ戻る
-        </a>
+        <div class="mt-s flex items-center justify-between">
+          <a class="text-(length:--font-size-14) text-gray-500 hover:underline" href="/">
+            一覧へ戻る
+          </a>
+
+          {isAuthor && (
+            <form action={`/knowledges/${knowledge.knowledgeId}/delete`} method="post" onsubmit={deleteOnSubmit}>
+              <button
+                class="shrink-0 cursor-pointer rounded-(--border-radius-8) bg-red-500 px-s py-2xs text-(length:--font-size-14) font-bold text-white hover:opacity-80"
+                type="submit"
+              >
+                削除する
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </Layout>
   );
