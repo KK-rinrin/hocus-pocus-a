@@ -212,17 +212,20 @@ describe('Delete knowledge', () => {
     expect(deleteByKnowledgeId).toHaveBeenCalledWith(knowledge.knowledgeId);
   });
 
-  it('存在しないナレッジの削除要求は削除せず 404 を返す', async () => {
+  it('存在しないナレッジの削除要求は削除せず 404 と一覧への導線を返す', async () => {
     vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(undefined);
     const deleteByKnowledgeId = vi.spyOn(KnowledgeRepository, 'deleteByKnowledgeId').mockResolvedValue();
 
     const response = await requestAsUser('/knowledges/does-not-exist/delete', 'author-1', { method: 'POST' });
+    const html = await response.text();
 
     expect(response.status).toBe(404);
+    expect(html).toContain('ナレッジが見つかりません');
+    expect(html).toContain('href="/"');
     expect(deleteByKnowledgeId).not.toHaveBeenCalled();
   });
 
-  it('他人による削除要求は削除せず 403 を返す', async () => {
+  it('他人による削除要求は削除せず 403 と一覧への導線を返す', async () => {
     const knowledge = Knowledge.create('他人のナレッジ', '本文', 'author-1');
     vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
     const deleteByKnowledgeId = vi.spyOn(KnowledgeRepository, 'deleteByKnowledgeId').mockResolvedValue();
@@ -230,8 +233,11 @@ describe('Delete knowledge', () => {
     const response = await requestAsUser(`/knowledges/${knowledge.knowledgeId}/delete`, 'other-user', {
       method: 'POST',
     });
+    const html = await response.text();
 
     expect(response.status).toBe(403);
+    expect(html).toContain('削除する権限がありません');
+    expect(html).toContain('href="/"');
     expect(deleteByKnowledgeId).not.toHaveBeenCalled();
   });
 
@@ -244,6 +250,23 @@ describe('Delete knowledge', () => {
 
     expect(response.status).toBe(403);
     expect(deleteByKnowledgeId).not.toHaveBeenCalled();
+  });
+
+  it('ファイル削除に失敗した場合はログを残し、500 と再試行・一覧への導線を返す', async () => {
+    const knowledge = Knowledge.create('削除失敗するナレッジ', '本文', 'author-1');
+    const failure = new Error('permission denied');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+    vi.spyOn(KnowledgeRepository, 'deleteByKnowledgeId').mockRejectedValue(failure);
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const response = await requestAsUser(`/knowledges/${knowledge.knowledgeId}/delete`, 'author-1', { method: 'POST' });
+    const html = await response.text();
+
+    expect(response.status).toBe(500);
+    expect(html).toContain('削除に失敗しました');
+    expect(html).toContain('href="/"');
+    expect(html).toContain(`href="/knowledges/${knowledge.knowledgeId}"`);
+    expect(logError).toHaveBeenCalledWith(failure);
   });
 
   it('削除処理で例外が発生した場合は握りつぶさず呼び出し元へ伝える', async () => {
