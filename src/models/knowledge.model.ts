@@ -97,6 +97,10 @@ function create(title: Knowledge['title'], content: Knowledge['content'], author
  * @returns 更新されたナレッジ
  */
 function update(self: Knowledge, content: Knowledge['content']): Knowledge {
+  if (content.trim() === '') {
+    throw new KnowledgeContentRequiredError();
+  }
+
   return {
     ...self,
     content,
