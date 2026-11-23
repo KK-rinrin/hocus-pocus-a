@@ -1,7 +1,20 @@
+import { Hono } from 'hono';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Knowledge } from './models/knowledge.model.js';
 import { KnowledgeRepository } from './models/knowledge.repository.js';
-import { router } from './router.js';
+import { router, type Variables } from './router.js';
+
+function requestAsUser(path: string, userId: string, init?: RequestInit) {
+  const app = new Hono<{ Variables: Variables }>();
+  app.use('*', async (ctx, next) => {
+    ctx.set('userId', userId);
+    ctx.set('userName', userId);
+    await next();
+  });
+  app.route('/', router);
+
+  return app.request(path, init);
+}
 
 function postCreateKnowledge(title: string, content: string) {
   return router.request('/knowledges/new', {
@@ -142,5 +155,45 @@ describe('Knowledge detail', () => {
     expect(response.status).toBe(404);
     expect(html).toContain('ナレッジが見つかりません');
     expect(html).toContain('href="/"');
+  });
+
+  it('投稿者本人が詳細画面を開くと、確認ダイアログ付きの削除フォームを表示する', async () => {
+    const knowledge = Knowledge.create('自分のナレッジ', '本文', 'author-1');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+
+    const response = await requestAsUser(`/knowledges/${knowledge.knowledgeId}`, 'author-1');
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).toContain(`action="/knowledges/${knowledge.knowledgeId}/delete"`);
+    expect(html).toContain('method="post"');
+    expect(html).toContain('onsubmit="return confirm(');
+    expect(html).toContain('「自分のナレッジ」を削除しますか？');
+    expect(html).toContain('削除したナレッジは元に戻せません。');
+    expect(html).toContain('type="submit"');
+    expect(html).toContain('削除する');
+  });
+
+  it('他人には詳細画面に削除フォームを表示しない', async () => {
+    const knowledge = Knowledge.create('他人のナレッジ', '本文', 'author-1');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+
+    const response = await requestAsUser(`/knowledges/${knowledge.knowledgeId}`, 'other-user');
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).not.toContain(`/knowledges/${knowledge.knowledgeId}/delete`);
+    expect(html).not.toContain('削除する');
+  });
+
+  it('ログインユーザーIDが未設定の場合は削除フォームを表示しない', async () => {
+    const knowledge = Knowledge.create('誰かのナレッジ', '本文', 'author-1');
+    vi.spyOn(KnowledgeRepository, 'getByKnowledgeId').mockResolvedValue(knowledge);
+
+    const response = await router.request(`/knowledges/${knowledge.knowledgeId}`);
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).not.toContain(`/knowledges/${knowledge.knowledgeId}/delete`);
   });
 });

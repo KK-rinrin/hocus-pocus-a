@@ -65,9 +65,10 @@ router.post('/knowledges/new', async (ctx) => {
 // MEMO: `/knowledges/new` より後に登録し、`new` が knowledgeId として扱われないようにする
 router.get('/knowledges/:knowledgeId', async (ctx) => {
   const knowledgeId = ctx.req.param('knowledgeId');
-  const knowledgeDetail = await getKnowledgeController(knowledgeId);
+  const userId = ctx.get('userId');
+  const knowledgeDetail = await getKnowledgeController(knowledgeId, userId);
 
-  // MEMO: 詳細は誰でも閲覧できるため、本人確認は行わない
+  // MEMO: 詳細は誰でも閲覧できる (userId は本人向け削除導線の表示判定のみに使用する)
   if (knowledgeDetail == null) return ctx.html(knowledgeNotFoundController(), 404);
 
   return ctx.html(knowledgeDetail);
