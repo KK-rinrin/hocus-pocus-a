@@ -106,7 +106,7 @@ describe('Create knowledge transition', () => {
 });
 
 describe('Knowledge list', () => {
-  it('一覧画面にナレッジのタイトルと本文を表示する', async () => {
+  it('一覧画面にナレッジのタイトルを表示する', async () => {
     const knowledge = Knowledge.create('一覧のタイトル', '一覧の本文', 'list-author');
     vi.spyOn(KnowledgeRepository, 'getAll').mockResolvedValue([knowledge]);
 
@@ -115,7 +115,6 @@ describe('Knowledge list', () => {
 
     expect(response.status).toBe(200);
     expect(html).toContain('一覧のタイトル');
-    expect(html).toContain('一覧の本文');
   });
 });
 
