@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -74,5 +74,51 @@ describe('KnowledgeRepository', () => {
 
   it('getByKnowledgeId はパス区切り文字を含む knowledgeId に対して undefined を返す', async () => {
     expect(await KnowledgeRepository.getByKnowledgeId('../package')).toBeUndefined();
+  });
+
+  it('deleteByKnowledgeId で対象のナレッジだけを削除し、他のナレッジを残す', async () => {
+    const target = Knowledge.create('削除対象', '消す本文', 'test-author');
+    const other = Knowledge.create('残すナレッジ', '残る本文', 'test-author');
+
+    await KnowledgeRepository.upsert(target);
+    await KnowledgeRepository.upsert(other);
+
+    await KnowledgeRepository.deleteByKnowledgeId(target.knowledgeId);
+
+    expect(await KnowledgeRepository.getByKnowledgeId(target.knowledgeId)).toBeUndefined();
+    expect(await KnowledgeRepository.getAll()).toEqual([other]);
+  });
+
+  it('deleteByKnowledgeId は存在しない knowledgeId でもエラーにならず完了する', async () => {
+    await expect(KnowledgeRepository.deleteByKnowledgeId('does-not-exist')).resolves.toBeUndefined();
+  });
+
+  it('deleteByKnowledgeId はパス区切り文字を含む knowledgeId で storage 外を削除しない', async () => {
+    await writeFile('./outside.json', JSON.stringify({ knowledgeId: '../outside' }), 'utf-8');
+
+    await KnowledgeRepository.deleteByKnowledgeId('../outside');
+
+    await expect(access('./outside.json')).resolves.toBeUndefined();
+  });
+
+  it('deleteByKnowledgeId はファイル内の knowledgeId が一致しない場合は削除しない', async () => {
+    await mkdir('./storage', { recursive: true });
+    await writeFile(
+      './storage/mismatch-file.json',
+      JSON.stringify({
+        __tag: 'Knowledge',
+        knowledgeId: 'different-id',
+        title: '別ID',
+        content: '本文',
+        authorId: 'test-author',
+        createdAt: 1700000000,
+        updatedAt: 1700000000,
+      }),
+      'utf-8',
+    );
+
+    await KnowledgeRepository.deleteByKnowledgeId('mismatch-file');
+
+    expect(await KnowledgeRepository.getByKnowledgeId('mismatch-file')).toBeDefined();
   });
 });

@@ -77,7 +77,7 @@ Step 1: 詳細ページに本人専用の削除ボタンを配置する
 - [x] `knowledge.authorId === userId` の場合だけ削除ボタンを表示する
 - [x] 他人には削除ボタンを表示しない
 - [x] 削除ボタンは誤操作防止のため目立つ色を使う
-- [ ] フロント側の表示制御だけでなく、サーバー側の本人確認も必ず実装する
+- [x] フロント側の表示制御だけでなく、サーバー側の本人確認も必ず実装する
 
 この Step の完遂条件:
 
@@ -123,12 +123,12 @@ Step 2: 詳細ページに確認ダイアログと削除用 POST フォームを
 Step 3: 削除実行用の POST ルートを Router に追加する
 -------------------------------------------------------------------------------
 
-- [ ] `src/router.ts` に `router.post('/knowledges/:knowledgeId/delete', ...)` を追加する
-- [ ] `ctx.req.param('knowledgeId')` で削除対象 ID を取得する
-- [ ] `ctx.get('userId')` でログイン中ユーザー ID を取得する
-- [ ] 削除処理用 Controller へ対象 ID とユーザー ID を渡す
-- [ ] 削除成功時は一覧 (`/`) へリダイレクトする
-- [ ] Controller へ Hono の Context を直接渡さない
+- [x] `src/router.ts` に `router.post('/knowledges/:knowledgeId/delete', ...)` を追加する
+- [x] `ctx.req.param('knowledgeId')` で削除対象 ID を取得する
+- [x] `ctx.get('userId')` でログイン中ユーザー ID を取得する
+- [x] 削除処理用 Controller へ対象 ID とユーザー ID を渡す
+- [x] 削除成功時は一覧 (`/`) へリダイレクトする
+- [x] Controller へ Hono の Context を直接渡さない
 
 ルート例:
 
@@ -151,15 +151,15 @@ router.post('/knowledges/:knowledgeId/delete', async (ctx) => {
 Step 4: 削除処理用 Controller を作成する
 -------------------------------------------------------------------------------
 
-- [ ] `src/controllers/delete-knowledge.controller.tsx` を作成する
-- [ ] `knowledgeId` と `userId` を引数として受け取る
-- [ ] 対象ナレッジを `KnowledgeRepository.getByKnowledgeId()` で取得する
-- [ ] 対象が存在しない場合は 404 相当として処理する
-- [ ] `knowledge.authorId === userId` をサーバー側で必ず確認する
-- [ ] 本人なら `KnowledgeRepository.deleteByKnowledgeId(knowledgeId)` を呼び出す
-- [ ] 削除成功時は一覧へ遷移することを Router へ伝える
-- [ ] 削除失敗時は例外を握りつぶさず呼び出し元へ伝える
-- [ ] HTTP ステータスの組み立ては Router に委譲する
+- [x] `src/controllers/delete-knowledge.controller.tsx` を作成する
+- [x] `knowledgeId` と `userId` を引数として受け取る
+- [x] 対象ナレッジを `KnowledgeRepository.getByKnowledgeId()` で取得する
+- [x] 対象が存在しない場合は 404 相当として処理する
+- [x] `knowledge.authorId === userId` をサーバー側で必ず確認する
+- [x] 本人なら `KnowledgeRepository.deleteByKnowledgeId(knowledgeId)` を呼び出す
+- [x] 削除成功時は一覧へ遷移することを Router へ伝える
+- [x] 削除失敗時は例外を握りつぶさず呼び出し元へ伝える
+- [x] HTTP ステータスの組み立ては Router に委譲する
 
 確認ダイアログを経由せず URL へ直接 POST された場合でも、対象ナレッジの `authorId` とログイン中ユーザーをサーバー側で必ず比較する。
 
@@ -172,12 +172,12 @@ Step 4: 削除処理用 Controller を作成する
 Step 5: Repository の deleteByKnowledgeId を実装する
 -------------------------------------------------------------------------------
 
-- [ ] `src/models/knowledge.repository.ts` の `deleteByKnowledgeId()` を実装する
-- [ ] 対象の JSON ファイルパスを特定する
-- [ ] `node:fs/promises` の削除 API を利用する
-- [ ] 存在しないファイルの削除要求を適切に処理する
-- [ ] 削除失敗時は例外を呼び出し元へ伝える
-- [ ] 削除成功時に `void` または明確な成功値を返す
+- [x] `src/models/knowledge.repository.ts` の `deleteByKnowledgeId()` を実装する
+- [x] 対象の JSON ファイルパスを特定する
+- [x] `node:fs/promises` の削除 API を利用する
+- [x] 存在しないファイルの削除要求を適切に処理する
+- [x] 削除失敗時は例外を呼び出し元へ伝える
+- [x] 削除成功時に `void` または明確な成功値を返す
 
 実装イメージ:
 

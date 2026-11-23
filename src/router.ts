@@ -3,6 +3,7 @@ import {
   createKnowledgeController,
   submitCreateKnowledgeController,
 } from './controllers/create-knowledge.controller.js';
+import { deleteKnowledgeController } from './controllers/delete-knowledge.controller.js';
 import { getAllKnowledgesController } from './controllers/get-all-knowledges.controller.js';
 import { getKnowledgeController, knowledgeNotFoundController } from './controllers/get-knowledge.controller.js';
 import { KnowledgeValidationError } from './models/knowledge.model.js';
@@ -72,4 +73,17 @@ router.get('/knowledges/:knowledgeId', async (ctx) => {
   if (knowledgeDetail == null) return ctx.html(knowledgeNotFoundController(), 404);
 
   return ctx.html(knowledgeDetail);
+});
+
+// ナレッジ削除
+router.post('/knowledges/:knowledgeId/delete', async (ctx) => {
+  const knowledgeId = ctx.req.param('knowledgeId');
+  const userId = ctx.get('userId');
+
+  const result = await deleteKnowledgeController(knowledgeId, userId);
+
+  if (result === 'not_found') return ctx.html(knowledgeNotFoundController(), 404);
+  if (result === 'forbidden') return ctx.text('このナレッジを削除する権限がありません', 403);
+
+  return ctx.redirect('/');
 });
